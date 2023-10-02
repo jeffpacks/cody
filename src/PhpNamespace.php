@@ -2,6 +2,7 @@
 
 namespace jeffpacks\cody;
 
+use Closure;
 use jeffpacks\cody\exceptions\UnknownClassException;
 use jeffpacks\cody\exceptions\UnknownTraitException;
 use jeffpacks\cody\exceptions\UnknownInterfaceException;
@@ -85,12 +86,16 @@ class PhpNamespace {
 	 * Provides a specific class from this namespace.
 	 *
 	 * @param string $name The name of the class.
+	 * @param Closure|null $fallback A closure fn(string $requestedName, PhpNamespace $super) that will return a PhpClass object if the requested class does not exist.
 	 * @return PhpClass
 	 * @throws UnknownClassException
 	 */
-	public function getClass(string $name): PhpClass {
+	public function getClass(string $name, ?Closure $fallback = null): PhpClass {
 
 		if (!isset($this->classes[$name])) {
+			if ($fallback) {
+				return $fallback($name, $this);
+			}
 			throw new UnknownClassException($name);
 		}
 
@@ -108,15 +113,28 @@ class PhpNamespace {
 	}
 
 	/**
+	 * Provides the fully qualified PHP namespace name of this namespace.
+	 *
+	 * @return string
+	 */
+	public function getFqn(): string {
+		return $this->namespace ? "$this->namespace\\$this->name" : $this->name;
+	}
+
+	/**
 	 * Provides a specific interface from this namespace.
 	 *
 	 * @param string $name The name of the interface.
+	 * @param Closure|null $fallback A closure fn(string $requestedName, PhpNamespace $super) that will return a PhpInterface object if the requested interface does not exist.
 	 * @return PhpInterface
 	 * @throws UnknownInterfaceException
 	 */
-	public function getInterface(string $name): PhpInterface {
+	public function getInterface(string $name, ?Closure $fallback = null): PhpInterface {
 
 		if (!isset($this->interfaces[$name])) {
+			if ($fallback) {
+				return $fallback($name, $this);
+			}
 			throw new UnknownInterfaceException($name);
 		}
 
@@ -146,12 +164,16 @@ class PhpNamespace {
 	 * Provides a specific namespace within this namespace.
 	 *
 	 * @param string $name The name of the namespace.
+	 * @param Closure|null $fallback A closure fn(string $requestedName, PhpNamespace $super) that will return a PhpNamespace object if the requested namespace does not exist.
 	 * @return PhpNamespace
 	 * @throws UnknownNamespaceException
 	 */
-	public function getNamespace(string $name): PhpNamespace {
+	public function getNamespace(string $name, ?Closure $fallback = null): PhpNamespace {
 
 		if (isset($this->namespaces[$name])) {
+			if ($fallback) {
+				return $fallback($name, $this);
+			}
 			return $this->namespaces[$name];
 		}
 
@@ -172,12 +194,16 @@ class PhpNamespace {
 	 * Provides a specific trait from this namespace.
 	 *
 	 * @param string $name The name of the trait.
+	 * @param Closure|null $fallback A closure fn(string $requestedName, PhpNamespace $super) that will return a PhpTrait object if the requested trait does not exist.
 	 * @return PhpTrait
 	 * @throws UnknownTraitException
 	 */
-	public function getTrait(string $name): PhpTrait {
+	public function getTrait(string $name, ?Closure $fallback = null): PhpTrait {
 
 		if (!isset($this->trait[$name])) {
+			if ($fallback) {
+				return $fallback($name, $this);
+			}
 			throw new UnknownTraitException($name);
 		}
 
@@ -195,12 +221,100 @@ class PhpNamespace {
 	}
 
 	/**
+	 * Indicates whether this namespace has a given class.
+	 *
+	 * @param string $name A PHP classname or fully qualified PHP classname.
+	 * @return bool
+	 */
+	public function hasClass(string $name): bool {
+
+		if (isset($this->classes[$name])) {
+			return true;
+		}
+
+		foreach ($this->getClasses() as $class) {
+			if ($class->getFqn() === $name) {
+				return true;
+			}
+		}
+
+		return false;
+
+	}
+
+	/**
+	 * Indicates whether this namespace has a given interface.
+	 *
+	 * @param string $name A PHP classname or fully qualified PHP classname.
+	 * @return bool
+	 */
+	public function hasInterface(string $name): bool {
+
+		if (isset($this->interfaces[$name])) {
+			return true;
+		}
+
+		foreach ($this->getInterfaces() as $interface) {
+			if ($interface->getFqn() === $name) {
+				return true;
+			}
+		}
+
+		return false;
+
+	}
+
+	/**
+	 * Indicates whether this namespace has a given sub-namespace.
+	 *
+	 * @param string $name A PHP namespace basename or a full PHP namespace
+	 * @return bool
+	 */
+	public function hasNamespace(string $name): bool {
+
+		if (isset($this->namespaces[$name])) {
+			return true;
+		}
+
+		foreach ($this->getNamespaces() as $namespace) {
+			if ($namespace->getFqn() === $name) {
+				return true;
+			}
+		}
+
+		return false;
+
+	}
+
+	/**
+	 * Indicates whether this namespace has a given trait.
+	 *
+	 * @param string $name A PHP classname or fully qualified PHP classname.
+	 * @return bool
+	 */
+	public function hasTrait(string $name): bool {
+
+		if (isset($this->traits[$name])) {
+			return true;
+		}
+
+		foreach ($this->getTraits() as $trait) {
+			if ($trait->getFqn() === $name) {
+				return true;
+			}
+		}
+
+		return false;
+
+	}
+
+	/**
 	 * Provides a string representation of this namespace.
 	 *
 	 * @return string
 	 */
 	public function __toString(): string {
-		return $this->namespace ? "$this->namespace\\$this->name" : $this->name;
+		return $this->getFqn();
 	}
 
 }

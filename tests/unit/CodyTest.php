@@ -4,6 +4,7 @@ namespace jeffpacks\cody\unit;
 
 use Exception;
 use jeffpacks\cody\Cody;
+use jeffpacks\cody\exceptions\UnknownClassException;
 use jeffpacks\cody\PhpTrait;
 use jeffpacks\cody\Project;
 use jeffpacks\cody\PhpClass;
@@ -181,6 +182,26 @@ class CodyTest extends TestCase {
 		$getUrlMethod = $class->getMethod('getUrl');
 		$this->assertInstanceOf(PhpMethod::class, $getUrlMethod);
 		$this->assertEmpty($getUrlMethod->getBodyLines());
+
+		return $projectNamespace;
+
+	}
+
+	/**
+	 * @param PhpNamespace $projectNamespace
+	 * @return PhpNamespace
+	 * @depends testCreateClass
+	 */
+	public function testGetClass(PhpNamespace $projectNamespace): PhpNamespace {
+
+		try {
+			$this->assertInstanceOf(PhpClass::class, $projectNamespace->getClass('Page'));
+			$this->assertInstanceOf(PhpClass::class, $projectNamespace->getClass('Article', function (string $name, PhpNamespace $namespace) {
+				return $namespace->createClass($name);
+			}));
+		} catch (UnknownClassException $e) {
+			$this->fail('UnknownClassException should not have been throwed');
+		}
 
 		return $projectNamespace;
 
