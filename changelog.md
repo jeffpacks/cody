@@ -4,6 +4,19 @@ All notable changes to this product will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this product adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0-alpha.2] - 2023-10-02
+
+### Added
+- Fallback closure to methods:
+  - `PhpNamespace::getClass()`
+  - `PhpNamespace::getInterface()`
+  - `PhpNamespace::getNamespace()`
+  - `PhpNamespace::getTrait()`
+- `PhpNamespace::hasClass()`
+- `PhpNamespace::hasInterface()`
+- `PhpNamespace::hasNamespace()`
+- `PhpNamespace::hasTrait()`
+
 ## [1.0.0-alpha.1] - 2023-10-02
 
 ### Added
