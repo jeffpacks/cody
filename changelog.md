@@ -6,6 +6,27 @@ and this product adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0-alpha.3] - Unreleased
 
+### Added
+- Support for setting instance variables
+  - `PhpVariable`
+  - `PhpInstanceVariable`
+  - `IncompatibleVariableValue`
+  - `UnknownVariableException`
+  - `PhpDocBlock::getReturnTypes()`
+  - `PhpDocBlock::setReturnTypes()`
+  - `PhpParameter::asAnnotation()`
+  - `Implementor::createVariable()`
+  - `Implementor::getMethod()`
+  - `Implementor::getVariable()`
+  - `Implementor::getVariables()`
+  - `Implementor::hasMethod()`
+  - `Implementor::hasVariable()`
+
+### Changed
+- Renamed `PhpMethodSignature::getReturnType()` to `PhpMethodSignature::getReturnTypes()`
+- `PhpMethodSignature::getReturnTypes()` now returns an array instead of a string
+- Renamed `PhpMethodSignature::setReturnType()` to `PhpMethodSignature::setReturnTypes()`
+
 ## [1.0.0-alpha.2] - 2023-10-02
 
 ### Added
