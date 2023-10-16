@@ -35,7 +35,7 @@ class PhpMethod extends PhpMethodSignature {
 	 * @param bool $abstract True to set this method abstract, false otherwise.
 	 * @return PhpMethod This instance
 	 */
-	public function setAbstract(bool $abstract): PhpMethod {
+	public function setAbstract(bool $abstract = true): PhpMethod {
 
 		$this->isAbstract = $abstract;
 
