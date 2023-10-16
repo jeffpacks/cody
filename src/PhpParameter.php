@@ -2,55 +2,57 @@
 
 namespace jeffpacks\cody;
 
-use Exception;
-use jeffpacks\cody\traits\ValueEncoder;
 use jeffpacks\cody\interfaces\Importable;
+use jeffpacks\cody\exceptions\IncompatibleVariableValue;
 
 /**
  * Represents a PHP method parameter.
  */
-class PhpParameter implements Importable {
+class PhpParameter extends PhpVariable implements Importable {
 
-	use ValueEncoder;
-
-	private string $name;
-	private ?string $type;
-	private $defaultValue;
 	private ?string $description = null;
-	private bool $hasNullDefaultValue;
 
 	/**
 	 * PhpParameter constructor.
 	 *
-	 * @param string $name The name of the parameter.
-	 * @param string|null $type The value type of the parameter, e.g. "string", "?string", null for "mixed".
-	 * @param mixed $defaultValue The default value of the parameter, null for "null", omit for none.
+	 * @param string $name The name of the variable, without the leading $ character.
+	 * @param string|string[]|PhpInterface|PhpInterface[]|PhpClass|PhpClass[]|null $types Zero or more primitive PHP value types, PhpInterface or PhpClass instances or their equivalent FQNs, or a comma seperated string of such.
+	 * @param mixed $defaultValue The default value of the parameter, omit for none.
+	 * @throws IncompatibleVariableValue
 	 */
-	public function __construct(string $name, ?string $type = null, $defaultValue = null) {
+	public function __construct(string $name, $types = null, $defaultValue = null) {
 
-		$this->name = $name;
-		$this->type = $type;
-		$this->defaultValue = $defaultValue;
-		$this->hasNullDefaultValue = func_num_args() === 3 && $defaultValue === null;
+		parent::__construct($name, $types);
+
+		if (func_num_args() > 2) {
+			$this->setValue($defaultValue);
+		}
 
 	}
 
 	/**
-	 * Provides the name of this parameter.
+	 * Provides a doc-block annotation representation of this parameter.
 	 *
 	 * @return string
 	 */
-	public function getName(): string {
-		return $this->name;
-	}
+	public function asAnnotation(): string {
 
-	/**
-	 * Provides the default value of this parameter, if any.
-	 *
-	 * @return mixed
-	 */
-	public function getDefaultValue() {
-		return $this->defaultValue;
+		$string = '@param ';
+
+		if ($this->hasTypes()) {
+			$string .= implode('|', $this->getTypes()) . ' ';
+		} else {
+			$string .= 'mixed ';
+		}
+
+		$string .= "\${$this->getName()}";
+
+		if ($this->hasDescription()) {
+			$string .= " {$this->getDescription()}";
+		}
+
+		return $string;
+
 	}
 
 	/**
@@ -63,48 +65,12 @@ class PhpParameter implements Importable {
 	}
 
 	/**
-	 * Provides the type of this parameter, if any.
-	 *
-	 * @return string|null
-	 */
-	public function getType(): ?string {
-		return $this->type;
-	}
-
-	/**
-	 * Indicates whether this parameter specifies a default value.
-	 *
-	 * @return bool
-	 */
-	public function hasDefaultValue(): bool {
-		return $this->hasNullDefaultValue() || $this->defaultValue !== null;
-	}
-
-	/**
 	 * Indicates whether this parameter has a description.
 	 *
 	 * @return bool
 	 */
 	public function hasDescription(): bool {
 		return $this->description !== null;
-	}
-
-	/**
-	 * Indicates whether the default value of this parameter, if any, is null.
-	 *
-	 * @return bool
-	 */
-	public function hasNullDefaultValue(): bool {
-		return $this->hasNullDefaultValue;
-	}
-
-	/**
-	 * Indicates whether this parameter specifies a value type.
-	 *
-	 * @return bool
-	 */
-	public function hasType(): bool {
-		return $this->type !== null;
 	}
 
 	/**
@@ -118,29 +84,6 @@ class PhpParameter implements Importable {
 		$this->description = $description;
 
 		return $this;
-
-	}
-
-	/**
-	 * Provides the full PHP code representation of this PHP class.
-	 *
-	 * @return string
-	 * @throws Exception
-	 */
-	public function __toString(): string {
-
-		$string = '';
-		if ($this->hasType()) {
-			$string .= "{$this->getType()} ";
-		}
-
-		$string .= "\${$this->getName()}";
-
-		if ($this->hasDefaultValue()) {
-			$string .= " = {$this->encode($this->getDefaultValue())}";
-		}
-
-		return $string;
 
 	}
 

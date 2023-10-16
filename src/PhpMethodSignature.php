@@ -3,8 +3,9 @@
 namespace jeffpacks\cody;
 
 use Error;
-use jeffpacks\cody\interfaces\Implementable;
 use jeffpacks\cody\interfaces\Importable;
+use jeffpacks\cody\interfaces\Implementable;
+use jeffpacks\cody\exceptions\IncompatibleVariableValue;
 
 class PhpMethodSignature implements Importable, Implementable {
 
@@ -12,18 +13,22 @@ class PhpMethodSignature implements Importable, Implementable {
 	private array $parameters = [];
 	protected bool $isAbstract = false;
 	private bool $isStatic = false;
-	private string $returnType = 'void';
+	private array $returnTypes = [];
 	private PhpDocBlock $docBlock;
 	private string $accessModifier;
 
+	/**
+	 * PhpMethodSignature constructor.
+	 *
+	 * @param string $name The name of the method, not including parenthesis.
+	 * @param string|null $accessModifier "public", "protected" or "private", defaults to "public"
+	 */
 	public function __construct(string $name, ?string $accessModifier = 'public') {
 
 		$this->name = $name;
 		$this->accessModifier = $accessModifier;
 
 		$this->docBlock = new PhpDocBlock("\t");
-		$this->docBlock->addAnnotation('return', 'void');
-		$this->docBlock->setAnnotationOrder(['param', 'return', 'throws']);
 
 	}
 
@@ -32,7 +37,6 @@ class PhpMethodSignature implements Importable, Implementable {
 		$this->parameters = array_map(fn(PhpParameter $parameter) => clone $parameter, $this->parameters);
 	}
 
-
 	/**
 	 * Adds a parameter to this method.
 	 *
@@ -40,6 +44,7 @@ class PhpMethodSignature implements Importable, Implementable {
 	 * @param string|null $type The value type of the parameter, e.g. "string", "?string", null for "mixed".
 	 * @param mixed $defaultValue The default value of the parameter, null for "null", omit for none.
 	 * @return PhpParameter The new parameter
+	 * @throws IncompatibleVariableValue
 	 */
 	public function createParameter(string $name, ?string $type = null, $defaultValue = null): PhpParameter {
 
@@ -113,12 +118,12 @@ class PhpMethodSignature implements Importable, Implementable {
 	}
 
 	/**
-	 * Provides the return type of this method.
+	 * Provides the return types of this method.
 	 *
-	 * @return string
+	 * @return string[]
 	 */
-	public function getReturnType(): string {
-		return $this->returnType;
+	public function getReturnTypes(): array {
+		return $this->returnTypes;
 	}
 
 	/**
@@ -126,6 +131,7 @@ class PhpMethodSignature implements Importable, Implementable {
 	 *
 	 * @param Importable $importable
 	 * @return Importable
+	 * @throws IncompatibleVariableValue
 	 */
 	public function import(Importable $importable): Importable {
 
@@ -141,7 +147,7 @@ class PhpMethodSignature implements Importable, Implementable {
 				$this->parameters[$name] = clone $parameter;
 			}
 			$this->isStatic = $importable->isStatic;
-			$this->returnType = $importable->returnType;
+			$this->returnTypes = $importable->returnTypes;
 			$this->accessModifier = $importable->accessModifier;
 			return $this;
 		}
@@ -183,15 +189,15 @@ class PhpMethodSignature implements Importable, Implementable {
 	}
 
 	/**
-	 * Sets the return type of this method.
+	 * Sets the return types of this method.
 	 *
-	 * @param string $returnType
-	 * @return PhpMethod This instance
+	 * @param string|string[]|PhpInterface|PhpInterface[]|PhpClass|PhpClass[]|null $types Zero or more primitive PHP value types, PhpInterface or PhpClass instances or their equivalent FQNs, or a comma seperated string of such.
+	 * @return PhpMethodSignature This instance
 	 */
-	public function setReturnType(string $returnType): PhpMethodSignature {
+	public function setReturnTypes($types): PhpMethodSignature {
 
-		$this->returnType = $returnType;
-		$this->docBlock->addAnnotation('return', $returnType);
+		$this->returnTypes = PhpVariable::normalizeDataTypes($types);
+		$this->docBlock->setReturnTypes($types);
 
 		return $this;
 
@@ -216,7 +222,19 @@ class PhpMethodSignature implements Importable, Implementable {
 			$string .= 'static ';
 		}
 
-		$string .= "function {$this->getName()}(" . implode(', ', $this->getParameters()) . "): {$this->getReturnType()}";
+		$string .= "function {$this->getName()}(" . implode(', ', $this->getParameters()) . ')';
+
+		# Return type
+		if (in_array('null', $this->returnTypes)) {
+			if (count($this->returnTypes) === 2) {
+				$returnType = array_filter($this->returnTypes, fn(string $type) => $type !== 'null');
+				$string .= ': ?' . reset($returnType);
+			}
+		} else {
+			if (count($this->returnTypes) === 1) {
+				$string .= ': ' . reset($this->returnTypes);
+			}
+		}
 
 		return $string;
 

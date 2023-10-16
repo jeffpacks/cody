@@ -2,24 +2,53 @@
 
 namespace jeffpacks\cody\unit;
 
+use Closure;
+use jeffpacks\cody\exceptions\IncompatibleVariableValue;
+use Throwable;
 use Exception;
 use jeffpacks\cody\Cody;
-use jeffpacks\cody\exceptions\UnknownClassException;
-use jeffpacks\cody\PhpTrait;
 use jeffpacks\cody\Project;
 use jeffpacks\cody\PhpClass;
+use jeffpacks\cody\PhpTrait;
 use jeffpacks\cody\PhpMethod;
+use jeffpacks\cody\PhpVariable;
 use jeffpacks\cody\PhpInterface;
 use jeffpacks\cody\PhpNamespace;
 use jeffpacks\cody\PhpMethodSignature;
+use jeffpacks\cody\PhpInstanceVariable;
+use jeffpacks\cody\exceptions\UnknownClassException;
 use jeffpacks\cody\exceptions\UnknownMethodException;
 use jeffpacks\cody\exceptions\UnknownNamespaceException;
 use jeffpacks\cody\exceptions\UnknownInterfaceException;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\AssertionFailedError;
 
 class CodyTest extends TestCase {
 
 	private static string $outputDirPath;
+
+	/**
+	 * Asserts that a given function will throw a throwable of a given class.
+	 *
+	 * @param string $class The full class name of the expected throwable.
+	 * @param Closure $closure The function that will throw the throwable.
+	 */
+	protected function assertThrows(string $class, Closure $closure): Throwable {
+
+		try {
+			call_user_func($closure);
+		} catch (Throwable $e) {
+			# Don't catch PHPUnit exceptions
+			if ($e instanceof AssertionFailedError) {
+				throw $e;
+			}
+			$this->assertInstanceOf($class, $e, "Expected exception $class but " . get_class($e) . " was thrown instead with the following message:\n{$e->getMessage()}\nStack trace:\n{$e->getTraceAsString()}");
+			return $e;
+		}
+
+		$this->fail("Expected exception $class");
+
+	}
 
 	/**
 	 * @return void
@@ -96,6 +125,7 @@ class CodyTest extends TestCase {
 	 * @param PhpNamespace $projectNamespace
 	 * @return PhpNamespace
 	 * @depends testGetNamespace
+	 * @throws IncompatibleVariableValue
 	 */
 	public function testCreateInterface(PhpNamespace $projectNamespace): PhpNamespace {
 
@@ -111,6 +141,7 @@ class CodyTest extends TestCase {
 		$getUrlMethod->createParameter('fragment', '?string', null);
 		$getUrlMethod->createParameter('params', '?array', null);
 		$getUrlMethod->createParameter('asHttps', 'bool', true);
+		$getUrlMethod->setReturnTypes('?string');
 		$this->assertInstanceOf(PhpMethodSignature::class, $getUrlMethod);
 
 		$pageInterface = $interfacesNamespace->createInterface('Page')
@@ -121,7 +152,7 @@ class CodyTest extends TestCase {
 
 		$getTitleMethod = $pageInterface->createMethod('getTitle')
 			->setDescription('Provides the title of the page');
-		$getTitleMethod->setReturnType('string');
+		$getTitleMethod->setReturnTypes(['string', 'null']);
 
 
 		return $projectNamespace;
@@ -135,6 +166,7 @@ class CodyTest extends TestCase {
 	 * @throws UnknownInterfaceException
 	 * @throws UnknownMethodException
 	 * @throws UnknownNamespaceException
+	 * @throws IncompatibleVariableValue
 	 */
 	public function testCreateTrait(PhpNamespace $projectNamespace): PhpNamespace {
 
@@ -146,9 +178,23 @@ class CodyTest extends TestCase {
 		$this->assertInstanceOf(PhpTrait::class, $trait);
 
 		$pageInterface = $projectNamespace->getNamespace('interfaces')->getInterface('Page');
-		$trait->implement($pageInterface);
 		$this->assertInstanceOf(PhpInterface::class, $pageInterface);
-		$this->assertInstanceOf(PhpMethod::class, $trait->getMethod('getTitle'));
+
+		$trait->implement($pageInterface);
+		$getTitle = $trait->getMethod('getTitle');
+		$this->assertInstanceOf(PhpMethod::class, $getTitle);
+		$getTitle->setBody('return $this->title;');
+
+		$variable = $trait->createVariable('title', '?string');
+		$this->assertInstanceOf(PhpInstanceVariable::class, $variable);
+		$this->assertTrue($variable->isNullable());
+		$this->assertEqualsCanonicalizing(['string', 'null'], $variable->getTypes());
+		$this->assertTrue($variable->isPrivate());
+		$this->assertFalse($variable->hasValue());
+		$variable->setValue(null);
+		$this->assertTrue($variable->hasValue());
+
+		$this->assertThrows(IncompatibleVariableValue::class, fn() => $variable->setValue(true));
 
 		return $projectNamespace;
 
@@ -179,9 +225,17 @@ class CodyTest extends TestCase {
 		$this->assertInstanceOf(PhpMethodSignature::class, $hasUrlInterface->getMethod('getUrl'));
 
 		$class->implement($hasUrlInterface);
+
+		$urlVariable = $class->createVariable('url', '?string');
+		$this->assertInstanceOf(PhpVariable::class, $urlVariable);
+		$this->assertTrue($urlVariable->isNullable());
+		$this->assertTrue($class->hasVariable('url'));
+		$this->assertTrue($urlVariable->isPrivate());
+
 		$getUrlMethod = $class->getMethod('getUrl');
 		$this->assertInstanceOf(PhpMethod::class, $getUrlMethod);
 		$this->assertEmpty($getUrlMethod->getBodyLines());
+		$getUrlMethod->setBody('return $this->url;');
 
 		return $projectNamespace;
 

@@ -33,17 +33,22 @@ $projectNamespace = $project->getNamespace(); # This is the project namespace, "
 $interfaces = $projectNamespace->createNamespace('interfaces'); # We'll put our interfaces in the "acme\webshop\interfaces" namespace
 $customer = $interfaces->createInterface('Customer');
 $customer->setDescription('Represents a web-shop customer');
-$customer->createMethod('getName()')->setDescription('Provides the full name of the customer')->setReturnType('string');
-$customer->createMethod('getAddress()')->setDescription('Provides the postal address of the customer')->setReturnType('string');
+$customer->createMethod('getName')->setDescription('Provides the full name of the customer')->setReturnTypes('string');
+$customer->createMethod('getAddress')->setDescription('Provides the postal address of the customer')->setReturnTypes('string');
 
 $user = $interfaces->createInterface('User');
 $user->setDescription('Represents a web-shop user');
-$user->createMethod('getUsername()')->setDescription('Provides the username of the user')->setReturnType('string');
-$user->createMethod('getPasswordHash()')->setDescription('Provides the hashed password of the user')->setReturnType('string');
+$user->createMethod('getUsername')->setDescription('Provides the username of the user')->setReturnTypes('string');
+$user->createMethod('getPasswordHash')->setDescription('Provides the hashed password of the user')->setReturnTypes('string');
 
 $client = $projectNamespace->createClass('Client')->setDescription('Represents a web-shop client');
 $client->implement($customer);
 $client->implement($user);
+
+$client->createVariable('name', 'string|null'); # pipe style
+$client->createVariable('address', '?string'); # nullable style
+$client->createVariable('username', ['string', 'null']); # array style
+$client->createVariable('passwordHash', '?string');
 
 $client->getMethod('getName')->setBody('return $this->name;')
 $client->getMethod('getAddress')->setBody('return $this->address;')

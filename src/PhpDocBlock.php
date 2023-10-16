@@ -12,7 +12,13 @@ class PhpDocBlock implements Importable {
 	private array $annotationOrder = [];
 	private array $parameters = [];
 	private array $throws = [];
+	private array $returnTypes = [];
 
+	/**
+	 * PhpDocBlock constructor.
+	 *
+	 * @param string $indentation The character or string to indent each line of this docblock with.
+	 */
 	public function __construct(string $indentation = '') {
 		$this->indentation = $indentation;
 	}
@@ -93,6 +99,15 @@ class PhpDocBlock implements Importable {
 	}
 
 	/**
+	 * Provides the return types of this docblock.
+	 *
+	 * @return string[]
+	 */
+	public function getReturnTypes(): array {
+		return $this->returnTypes;
+	}
+
+	/**
 	 * Provides the throws annotations of this docblock, if any.
 	 *
 	 * @return string[] Zero or more name => description entries
@@ -130,6 +145,20 @@ class PhpDocBlock implements Importable {
 	}
 
 	/**
+	 * Sets the return types of this docblock.
+	 *
+	 * @param string|string[]|PhpInterface|PhpInterface[]|PhpClass|PhpClass[]|null $types Zero or more primitive PHP value types, PhpInterface or PhpClass instances or their equivalent FQNs, or a comma seperated string of such.
+	 * @return PhpDocBlock This instance
+	 */
+	public function setReturnTypes($types = null): PhpDocBlock {
+
+		$this->returnTypes = PhpVariable::normalizeDataTypes($types);
+
+		return $this;
+
+	}
+
+	/**
 	 * Provides a string representation of this docblock.
 	 *
 	 * @return string
@@ -142,20 +171,22 @@ class PhpDocBlock implements Importable {
 		}
 		$string .= "$this->indentation * \n";
 
-		$annotationGroups = $this->annotationGroups;
-		uksort($annotationGroups, fn($a, $b) => array_search($a, $this->annotationOrder) <=> array_search($b, $this->annotationOrder));
-
 		foreach ($this->getParameters() as $parameter) {
-			$string .= "$this->indentation * @param "
-				. ($parameter->hasType() ? "{$parameter->getType()} " : '')
-				. "\${$parameter->getName()}"
-				. ($parameter->hasDescription() ? " {$parameter->getDescription()}" : '')
-				. "\n";
+			$string .= "$this->indentation * {$parameter->asAnnotation()}\n";
+		}
+
+		if ($this->returnTypes) {
+			$string .= "$this->indentation * @return " . implode('|', $this->returnTypes) . "\n";
+		} else {
+			$string .= "$this->indentation * @return void\n";
 		}
 
 		foreach ($this->getThrows() as $name => $description) {
 			$string .= "$this->indentation * @throws {$name}" . ($description ? " $description" : '') . "\n";
 		}
+
+		$annotationGroups = $this->annotationGroups;
+		uksort($annotationGroups, fn($a, $b) => array_search($a, $this->annotationOrder) <=> array_search($b, $this->annotationOrder));
 
 		foreach ($annotationGroups as $name => $annotations) {
 			foreach ($annotations as $annotation) {

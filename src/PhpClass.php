@@ -53,6 +53,10 @@ class PhpClass extends PhpCitizen implements HasInterfaces, HasTraits, Implement
 			$string .= "\n";
 		}
 
+		if ($variables = $this->getVariables()) {
+			$string .= implode("\n", $variables) . "\n\n";
+		}
+
 		$string .= implode("\n\n", $this->getMethods());
 
 		$string .= '}';
