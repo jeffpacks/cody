@@ -137,7 +137,10 @@ class CodyTest extends TestCase {
 		$this->assertInstanceOf(PhpInterface::class, $hasUrlInterface);
 
 		$getUrlMethod = $hasUrlInterface->createMethod('getUrl')
-			->setDescription('Provides the URL');
+			->setDescription([
+				'Provides the URL.',
+				'Note that this is the second line in the description of this method.'
+			]); # Intentional inconsistent punctuation
 		$getUrlMethod->createParameter('fragment', '?string', null);
 		$getUrlMethod->createParameter('params', '?array', null);
 		$getUrlMethod->createParameter('asHttps', 'bool', true);

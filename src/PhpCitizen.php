@@ -69,9 +69,9 @@ class PhpCitizen {
 	/**
 	 * Provides the description of this PHP citizen, if any.
 	 *
-	 * @return string|null
+	 * @return string[]
 	 */
-	public function getDescription(): ?string {
+	public function getDescription(): array {
 		return $this->docBlock->getDescription();
 	}
 
@@ -123,10 +123,10 @@ class PhpCitizen {
 	/**
 	 * Sets the description of this PHP citizen.
 	 *
-	 * @param string|null $description
+	 * @param string|string[]|null $description Zero or more lines of description.
 	 * @return PhpCitizen This instance
 	 */
-	public function setDescription(?string $description = null): PhpCitizen {
+	public function setDescription($description = null): PhpCitizen {
 
 		$this->docBlock->setDescription($description);
 

@@ -1,10 +1,17 @@
 <?php
 
-namespace jeffpacks\cody;
+namespace jeffpacks\cody\traits;
 
-use jeffpacks\cody\interfaces\Importable;
+use jeffpacks\cody\interfaces\HasDocBlock as HasDocBlockInterface;
+use jeffpacks\cody\PhpClass;
+use jeffpacks\cody\PhpInterface;
+use jeffpacks\cody\PhpParameter;
+use jeffpacks\cody\PhpVariable;
 
-class PhpDocBlock implements Importable {
+/**
+ * @implements HasDocBlockInterface
+ */
+trait HasDocBlock {
 
 	private array $description = [];
 	private array $annotationGroups = [];
@@ -15,22 +22,13 @@ class PhpDocBlock implements Importable {
 	private array $returnTypes = [];
 
 	/**
-	 * PhpDocBlock constructor.
-	 *
-	 * @param string $indentation The character or string to indent each line of this docblock with.
-	 */
-	public function __construct(string $indentation = '') {
-		$this->indentation = $indentation;
-	}
-
-	/**
 	 * Adds an annotation to this docblock.
 	 *
 	 * @param string $name The name of the annotation (not including any '@' character)
 	 * @param string $content The content or description of the annotation
-	 * @return PhpDocBlock This instance
+	 * @return HasDocBlockInterface This instance
 	 */
-	public function addAnnotation(string $name, string $content): PhpDocBlock {
+	public function addAnnotation(string $name, string $content): HasDocBlockInterface {
 
 		if (!isset($this->annotationGroups[$name])) {
 			$this->annotationGroups[$name] = [];
@@ -46,9 +44,9 @@ class PhpDocBlock implements Importable {
 	 * Adds a method parameter to this docblock.
 	 *
 	 * @param PhpParameter $parameter
-	 * @return PhpDocBlock This instance
+	 * @return HasDocBlockInterface This instance
 	 */
-	public function addParameter(PhpParameter $parameter): PhpDocBlock {
+	public function addParameter(PhpParameter $parameter): HasDocBlockInterface {
 
 		$this->parameters[$parameter->getName()] = $parameter;
 
@@ -61,9 +59,9 @@ class PhpDocBlock implements Importable {
 	 *
 	 * @param string $name The name of the throwable.
 	 * @param string|null $description A description of the throw, if any.
-	 * @return PhpDocBlock This instance
+	 * @return HasDocBlockInterface This instance
 	 */
-	public function addThrows(string $name, ?string $description): PhpDocBlock {
+	public function addThrows(string $name, ?string $description): HasDocBlockInterface {
 
 		$this->throws[$name] = $description;
 
@@ -120,9 +118,9 @@ class PhpDocBlock implements Importable {
 	 * Sets in which order annotations should be sorted.
 	 *
 	 * @param string[] $order Zero or more annotation names, in the order they should be sorted.
-	 * @return PhpDocBlock This instance
+	 * @return HasDocBlockInterface This instance
 	 */
-	public function setAnnotationOrder(array $order): PhpDocBlock {
+	public function setAnnotationOrder(array $order): HasDocBlockInterface {
 
 		$this->annotationOrder = $order;
 
@@ -134,9 +132,9 @@ class PhpDocBlock implements Importable {
 	 * Sets the description of this docblock.
 	 *
 	 * @param string|string[]|null $description Zero or more lines of description.
-	 * @return PhpDocBlock This instance
+	 * @return HasDocBlockInterface This instance
 	 */
-	public function setDescription($description = null): PhpDocBlock {
+	public function setDescription($description = null): HasDocBlockInterface {
 
 		$this->description = (array) $description;
 
@@ -148,9 +146,9 @@ class PhpDocBlock implements Importable {
 	 * Sets the return types of this docblock.
 	 *
 	 * @param string|string[]|PhpInterface|PhpInterface[]|PhpClass|PhpClass[]|null $types Zero or more primitive PHP value types, PhpInterface or PhpClass instances or their equivalent FQNs, or a comma seperated string of such.
-	 * @return PhpDocBlock This instance
+	 * @return HasDocBlockInterface This instance
 	 */
-	public function setReturnTypes($types = null): PhpDocBlock {
+	public function setReturnTypes($types = null): HasDocBlockInterface {
 
 		$this->returnTypes = PhpVariable::normalizeDataTypes($types);
 
@@ -189,7 +187,7 @@ class PhpDocBlock implements Importable {
 		}
 
 		foreach ($this->getThrows() as $name => $description) {
-			$string .= "$this->indentation * @throws {$name}" . ($description ? " $description" : '') . "\n";
+			$string .= "$this->indentation * @throws $name" . ($description ? " $description" : '') . "\n";
 		}
 
 		$annotationGroups = $this->annotationGroups;

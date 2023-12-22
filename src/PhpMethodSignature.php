@@ -71,7 +71,7 @@ class PhpMethodSignature implements Importable, Implementable {
 	 *
 	 * @param string $name Name of the throwable class.
 	 * @param string|null $description A description of when or why the throwable is thrown.
-	 * @return PhpMethod This instance
+	 * @return PhpMethodSignature This instance
 	 */
 	public function addThrows(string $name, ?string $description = null): PhpMethodSignature {
 
@@ -84,9 +84,9 @@ class PhpMethodSignature implements Importable, Implementable {
 	/**
 	 * Provides the description of this method, if any.
 	 *
-	 * @return string|null
+	 * @return string[]
 	 */
-	public function getDescription(): ?string {
+	public function getDescription(): array {
 		return $this->docBlock->getDescription();
 	}
 
@@ -177,10 +177,10 @@ class PhpMethodSignature implements Importable, Implementable {
 	/**
 	 * Sets the description of this PHP method.
 	 *
-	 * @param string|null $description
-	 * @return PhpMethod This instance
+	 * @param string|string[]|null $description Zero or more lines of description.
+	 * @return PhpMethodSignature This instance
 	 */
-	public function setDescription(?string $description = null): PhpMethodSignature {
+	public function setDescription($description = null): PhpMethodSignature {
 
 		$this->docBlock->setDescription($description);
 
